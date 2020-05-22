@@ -16,7 +16,8 @@
 #include <DallasTemperature.h>
 
 #include "secrets.h" 
-// Please enter your sensitive data in the Secret tab or arduino_secrets.h
+// Please enter your sensitive data in secrets.h
+// An example is provided in the repo (secrets_example.h)
 
 // Initialize Dallas Temperature sensors
 // Data wire is plugged into port 2 on the Arduino
