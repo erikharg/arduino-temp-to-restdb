@@ -54,7 +54,7 @@ String errortext = "ERROR";
 unsigned long sendData = 0; // next time we'll send data
 unsigned long sampleData = 0; // next time we'll sample data
 unsigned long SEND_WAIT = 3600; // how long to wait between submissions -- 3600 = 1h
-unsigned long SAMPLE_WAIT = 300; // how long to wait between samples  -- 300 = 5min
+unsigned long SAMPLE_WAIT = 900; // how long to wait between samples  -- 600 = 10min
 
 void setup() {
   int countdownMS = Watchdog.enable(16000); // 16s is max timeout
@@ -90,6 +90,12 @@ void loop() {
     {
       sample["temperature"] = tempAsString(tempVal);
       sample["time"] = formatDateTime(ticktime);
+
+      int sensorValue = analogRead(ADC_BATTERY);
+      // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 4.3V):
+      float voltage = sensorValue * (4.3 / 1023.0);
+      sample["voltage"] = formatVoltageAsString(voltage);
+
       tempValues[tempValues.length()] = sample;
     }
     Serial.println(oktext);
@@ -211,7 +217,7 @@ String formatDateTime(time_t t) {
  String mi_s = mi > 9 ? String(mi) : ("0" + String(mi));
  String s_s = s > 9 ? String(s) : ("0" + String(s));
  
- String retval = y_s + "-" + mn_s + "-" + d_s + " " + h_s + ":" + mi_s + ":" + s_s;
+ String retval = y_s + "-" + mn_s + "-" + d_s + " " + h_s + ":" + mi_s + ":" + s_s + " UTC";
 
  return retval;
  
@@ -227,4 +233,11 @@ String tempAsString(float tempC) {
   char tempChars[6];
   tempString.toCharArray(tempChars, 6);
   return String(tempChars);
+}
+
+String formatVoltageAsString(float voltage) {
+  String tempString = String(voltage);
+  char vChars[4];
+  tempString.toCharArray(vChars, 4);
+  return String(vChars);
 }
