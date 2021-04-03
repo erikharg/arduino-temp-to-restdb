@@ -52,9 +52,9 @@ String errortext = "ERROR";
 
 // Timekeeping 
 unsigned long sendData = 0; // next time we'll send data
-unsigned long sampleData = 0; // next time we'll sample data
-unsigned long SEND_WAIT = 3600; // how long to wait between submissions -- 3600 = 1h
-unsigned long SAMPLE_WAIT = 900; // how long to wait between samples  -- 600 = 10min
+unsigned long sampleData = 5; // next time we'll sample data
+unsigned long SEND_WAIT = 1800; // how long to wait between submissions -- 3600 = 1h
+unsigned long SAMPLE_WAIT = 600; // how long to wait between samples  -- 600 = 10min
 
 void setup() {
   int countdownMS = Watchdog.enable(16000); // 16s is max timeout
@@ -62,6 +62,10 @@ void setup() {
   // initialize serial communications and wait for port to open:
   Serial.begin(9600);
   gsmAccess.noLowPowerMode();
+  delay(5000);
+  Serial.println("\n");
+  Serial.println("\n");
+  Serial.println("\n");
   Serial.println("\nStarting service!");
   Serial.print("Enabled the watchdog with max countdown of ");
   Serial.print(countdownMS, DEC);
@@ -80,7 +84,11 @@ void loop() {
   //Serial.print(formatDateTime(ticktime) + "\n");
 
   if(ticktime > sampleData) { // we have a real time value, sample temperature
-    Serial.print("Sampling at ");
+    int sampleNo = tempValues.length();
+    if(sampleNo < 0) {
+      sampleNo = 0;
+    }
+    Serial.print("Sampling (#" + String(sampleNo) + ") at ");
     Serial.print(formatDateTime(ticktime) + "...");
     JSONVar sample;
     Watchdog.reset();
@@ -96,7 +104,10 @@ void loop() {
       float voltage = sensorValue * (4.3 / 1023.0);
       sample["voltage"] = formatVoltageAsString(voltage);
 
-      tempValues[tempValues.length()] = sample;
+      tempValues[sampleNo] = sample;
+      Serial.print(sample["temperature"]);
+    } else {
+      Serial.print("bad value ");
     }
     Serial.println(oktext);
     sampleData = now() + SAMPLE_WAIT; // wait this long until we sample data again
@@ -187,12 +198,19 @@ void loop() {
             tempValues = JSONVar(); // empty the value array
           }
         }
+      } else {
+        Serial.println("No data to send!");
+        sendData = 0;
       }
       Watchdog.reset();
       gsmAccess.shutdown();
       Watchdog.reset();
     }
-    sendData = now() + SEND_WAIT; // wait this long until we send data again
+    if(sendData > 0) {
+      sendData = now() + SEND_WAIT; // wait this long until we send data again
+    } else { // typically first run after restart
+      sendData = sampleData + 1; // send again ASAP after next sample
+    }
     Serial.println("Waiting until " + formatDateTime(sendData) + " to send data again");
   }
   //Serial.println("Loop done");
@@ -231,7 +249,7 @@ float getTemp() {
 String tempAsString(float tempC) {
   String tempString = String(tempC);
   char tempChars[6];
-  tempString.toCharArray(tempChars, 6);
+  tempString.toCharArray(tempChars, 5);
   return String(tempChars);
 }
 
