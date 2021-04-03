@@ -106,6 +106,8 @@ void loop() {
 
       tempValues[sampleNo] = sample;
       Serial.print(sample["temperature"]);
+    } else {
+      Serial.print("bad value ");
     }
     Serial.println(oktext);
     sampleData = now() + SAMPLE_WAIT; // wait this long until we sample data again
@@ -196,6 +198,9 @@ void loop() {
             tempValues = JSONVar(); // empty the value array
           }
         }
+      } else {
+        Serial.println("No data to send!");
+        sendData = 0;
       }
       Watchdog.reset();
       gsmAccess.shutdown();
@@ -204,7 +209,7 @@ void loop() {
     if(sendData > 0) {
       sendData = now() + SEND_WAIT; // wait this long until we send data again
     } else { // typically first run after restart
-      sendData = now() + SAMPLE_WAIT; // send again ASAP after next sample
+      sendData = sampleData + 1; // send again ASAP after next sample
     }
     Serial.println("Waiting until " + formatDateTime(sendData) + " to send data again");
   }
